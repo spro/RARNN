@@ -5,11 +5,14 @@
 
 %if
     if %condition then %action
+    if %condition then %sequence
 
 %sequence
     %action ~also ~please? %action
+    %action ~also ~please? %action ~also ~please? %action
+    %action ~also ~please? %action ~also ~please? %action ~also ~please? %action
 
-%condition=
+%condition
     %checkValue
     %getNumberValue is $operator $value
 
@@ -27,7 +30,7 @@
     %getPrice
     %getTemperature
 
-%action=
+%action
     ~get %getValue
     %setLightState
     %setSwitchState
@@ -99,11 +102,8 @@
     what's the
 
 ~prefix
-    ~greeting
     um
     uh
-    could you
-    how are you
     ~greeting
     ~greeting ~please
 
@@ -123,7 +123,8 @@
     plox
     plx
     pretty please
-    could you ~please
+    could you
+    could you please
 
 ~suffix
     ~thanks
