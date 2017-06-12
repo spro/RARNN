@@ -1,0 +1,382 @@
+%
+    ~prefix? %if ~suffix?
+    ~prefix? %sequence ~suffix?
+    ~prefix? %action ~suffix?
+
+%if
+    if %condition then %action
+
+%sequence
+    %action ~also ~please? %action
+
+%condition=
+    %checkValue
+    %getNumberValue is $operator $value
+
+%checkValue=
+    %checkLightState
+    %checkSwitchState
+
+%getNumberValue=
+    %getPrice
+    %getTemperature
+
+%getValue=
+    %getLightState
+    %getSwitchState
+    %getPrice
+    %getTemperature
+
+%action=
+    ~get %getValue
+    %setLightState
+    %setSwitchState
+    %setTemperature
+    %setVolume
+    %playMusic
+    
+# Specific commands
+# ---------------------------------------------------------
+
+%checkLightState
+    the $light is $on_off
+
+%checkSwitchState
+    the $switch is $on_off
+
+%getLightState
+    the $light state
+
+%getSwitchState
+    the $switch state
+   
+%getTemperature
+    the temperature in the $room
+    the $room temperature
+
+%getPrice
+    price of $asset
+    $asset price
+
+%setLightState
+    ~set the $light %light_state
+    ~set $on_off the $light
+
+%light_state=
+    $on_off
+    $up_down
+    $color
+
+%setSwitchState
+    ~set the $switch $on_off
+    ~set $on_off the $switch
+
+%setTemperature
+    ~set the $room temperature to $value
+    ~set the temperature of $room to $value
+
+%setVolume
+    ~set the volume $up_down
+
+%playMusic
+    play $song
+    play ~something_by $artist
+
+# Synonyms
+# ---------------------------------------------------------
+
+~set
+    set
+    turn
+    put
+    make
+    change
+
+~get
+    get
+    tell me
+    what is
+    what's the
+
+~prefix
+    ~greeting
+    um
+    uh
+    could you
+    how are you
+    ~greeting
+    ~greeting ~please
+
+~greeting
+    hi
+    hello there maia
+    hey maia
+    hey um
+    heya
+    yo
+    oh hi
+    oh hey there
+
+~please
+    please
+    pls
+    plox
+    plx
+    pretty please
+    could you ~please
+
+~suffix
+    ~thanks
+
+~thanks
+    thank you
+    thanks
+    thx
+    thank you very much
+    thanks maia
+    thank you maia
+
+~also
+    and
+    also
+    then
+    next
+    and also
+    then also
+    and then
+    and next
+    then next
+    and could you also
+
+~something_by
+    something by
+    some
+    some music by
+    a song from
+    shit by
+
+# Values
+# ---------------------------------------------------------
+
+$operator
+    equal to
+    greater than
+    less than
+
+$asset
+    bitcoin
+    btc
+    ethereum
+    eth
+    tesla
+    microsoft
+    yen
+    pesos
+
+$room
+    office
+    living room
+    bedroom
+    basement
+    kitchen
+    bathroom
+    outside
+
+$light
+    office light
+    living room light
+    bedroom light
+    basement light
+    kitchen light
+    bathroom light
+    outside light
+
+$switch
+    tea switch
+    tea
+    light switch
+    office switch
+    coffee
+    coffee pot
+    hot plate
+
+$on_off
+    on
+    off
+
+$up_down
+    high
+    low
+    up
+    down
+
+$color
+    red
+    green
+    blue
+    yellow
+    purple
+    white
+    orange
+
+$value
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+    10
+    11
+    12
+    13
+    14
+    15
+    16
+    17
+    18
+    19
+    20
+
+$artist
+    Isigin Yansimasi
+    Duman
+    Placebo
+    Kurban
+    Dolapdere Big Gang
+    Korn
+    The Cure
+    The Gathering
+    Athena
+    Badem
+    Hayko Cepkin
+    Aerosmith
+    Oasis
+    Muse
+    Skrillex
+    Whitesnake
+    Blonde Redhead
+    The White Stripes
+    Maroon 5
+    Natalie Imbruglia
+    Beirut
+    lhan Sesen
+    Morrissey
+    Jay-Jay Johanson
+    Wet Wet Wet
+    Yakup
+    Ufuk Yildirim
+    Deniz Seki
+    Elsiane
+    Nev
+    Reha
+    Nelly Furtado
+    Massive Attack
+    Bon Jovi
+    Diken
+    Sezen Aksu
+    Ceza
+    Agua de Annique
+    Berlin
+    Coldplay
+    Sebnem Ferah
+    Radiohead
+    Pinhani
+    Vega
+    Kenan Dogulu
+    Reha Falay
+    Muse
+
+$song
+    All I Have To Do Is Dream
+    Love It When You Call
+    Chelsea Dagger
+    New Album Version
+    Iris
+    Hate To Say I Told You So
+    Remaster
+    Shout
+    Summer Breeze
+    Blame It On The Boogie
+    Can You Feel It
+    A Town Called Malice
+    Human
+    Somebody Told Me
+    When You Were Young
+    Louie Louie
+    All Day And All Of The Night
+    Lola
+    Mono Single Version
+    Sunny Afternoon
+    Waterloo Sunset
+    You Really Got Me
+    My Sharona
+    Naive
+    Seaside
+    She Moves In Her Own Way
+    There She Goes
+    Time For Heroes
+    Jizz In My Pants
+    I Just Had Sex
+    Single Version
+    Album Version With Introduction
+    Love Machine
+    Daydream Believer
+    Theme From
+    Any Dream Will Do
+    Love Train
+    Every Breath You Take
+    Such Great Heights
+    Breathe
+    Firestarter
+    Funky Shit
+    Omen
+    Out Of Space
+    Smack My Bitch Up
+    Voodoo People
+    Many Shades Of Black
+    Radio Edit
+    Unchained Melody
+    Gimme Shelter
+    Paint It Black
+    Sympathy For The Devil
+    Under My Thumb
+    Be My Baby
+    Radio Edit
+    You Got The Love
+    Golden Brown
+    Peaches
+    Dry Your Eyes
+    Fit But You Know It
+    Last Nite
+    Someday
+    The Modern Age
+    Under Cover Of Darkness
+    Apache
+    Rappers Delight
+    Where Did Our Love Go
+    Sweet Disposition
+    My Girl
+    Shut Up and Let Me Go
+    Happy Together
+    Turning Japanese
+    I Shot The Sheriff
+    Seven Nation Army
+    Remixed Version
+    Original Album Version
+    Original Mono Version
+    Original Album Version
+    For Your Love
+    Heart Full Of Soul
+    Valerie
+    Jailbreak
+    The Boys Are Back In Town
+    The Lion Sleeps Tonight
+    The Way I Are
+    The Best
+    Pass Out
+    Delilah
+    Sexbomb
