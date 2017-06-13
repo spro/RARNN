@@ -28,7 +28,6 @@ The goal of RARNN is to recursively identify phrases and their top-level compone
 
 For the above sentence,
 
-
 1. Applied to the whole sentence, the model would recognize the overarching `%if` phrase.
 
 2. Applied to the `%if` phrase (which happens to be the whole sentence), the model would recognize sub-phrases `%condition` and `%command` (marked with square brackets).
@@ -45,4 +44,14 @@ For the above sentence,
 	```
 	> the [temperature] in [Tokyo]
 	```
+
+## Model
+
+The core model is a regular seq2seq/encoder-decoder model with attention. The attention model is from [Luong et al.'s "Effective Approaches to Attention-based Neural Machine Translation"](https://arxiv.org/abs/1508.04025) using dot-product based attention energies, with one important difference: there is no softmax layer, allowing attention to focus on multiple tokens at once. Instead a sigmoid layer is added to squeeze outputs between 0 and 1.
+
+The encoder and decoder take one additional input `context` which represents the type of phrase, e.g. `%setLightState`. At the top level node the context is always `%`.
+
+The encoder encodes the input sequence into a series of vectors using a bidirectional GRU. The decoder "translates" this into a sequence of phrase tokens, given the encoder outputs and current context, e.g. "turn off the office light" + `%setLightState` &rarr; `[$on_off, $light]`.
+
+Once the decoder has chosen tokens and alignments, the phrase tokens and selection of inputs are used as the context and inputs of the next iteration. This recurs until no more phrase tokens are found.
 
