@@ -1,20 +1,37 @@
 %
     ~prefix? %if ~suffix?
-    ~prefix? %sequence ~suffix?
-    ~prefix? %action ~suffix?
+    ~prefix? %timer ~suffix?
+    ~prefix? %command ~suffix?
 
 %if
-    if %condition then %action
-    if %condition then %sequence
+    ~if %condition then %command
+
+%timer
+    %command %time
+    %time %command
+
+%command=
+    %sequence
+    %action
 
 %sequence
     %action ~also ~please? %action
     %action ~also ~please? %action ~also ~please? %action
     %action ~also ~please? %action ~also ~please? %action ~also ~please? %action
 
+%time=
+    %relative_time
+    %absolute_time
+
+%relative_time
+    ~in $number $time_unit
+
+%absolute_time
+    ~at $time
+
 %condition
     %checkValue
-    %getNumberValue is $operator $value
+    %getNumberValue is $operator $number
 
 %checkValue=
     %checkLightState
@@ -37,7 +54,7 @@
     %setTemperature
     %setVolume
     %playMusic
-    
+
 # Specific commands
 # ---------------------------------------------------------
 
@@ -52,7 +69,7 @@
 
 %getSwitchState
     the $switch state
-   
+
 %getTemperature
     the temperature in the $room
     the $room temperature
@@ -75,8 +92,8 @@
     ~set $on_off the $switch
 
 %setTemperature
-    ~set the $room temperature to $value
-    ~set the temperature of $room to $value
+    ~set the $room temperature to $number
+    ~set the temperature of $room to $number
 
 %setVolume
     ~set the volume $up_down
@@ -88,10 +105,20 @@
 # Synonyms
 # ---------------------------------------------------------
 
+~if
+    if
+    when
+    as soon as
+
+~in
+    in
+
+~at
+    at
+
 ~set
     set
     turn
-    put
     make
     change
 
@@ -220,7 +247,11 @@ $color
     white
     orange
 
-$value
+$number
+    $_number
+    $_number $_number
+
+$_number=
     1
     2
     3
@@ -230,17 +261,18 @@ $value
     7
     8
     9
-    10
-    11
-    12
-    13
-    14
-    15
-    16
-    17
-    18
-    19
-    20
+    0
+
+$time_unit
+    seconds
+    minutes
+    hours
+    days
+
+$time
+    $_number pm
+    $_number am
+    $_number : $_number
 
 $artist
     Isigin Yansimasi
