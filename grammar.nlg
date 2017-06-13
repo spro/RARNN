@@ -1,23 +1,20 @@
 %
     ~prefix? %if ~suffix?
     ~prefix? %timer ~suffix?
-    ~prefix? %command ~suffix?
+    ~prefix? %sequence ~suffix?
 
 %if
-    ~if %condition then %command
+    ~if %condition then %sequence
 
 %timer
-    %command %time
-    %time %command
-
-%command=
-    %sequence
-    %action
+    %sequence %time
+    %time %sequence
 
 %sequence
-    %action ~also ~please? %action
-    %action ~also ~please? %action ~also ~please? %action
-    %action ~also ~please? %action ~also ~please? %action ~also ~please? %action
+    ~please? %action
+    ~please? %action ~also ~please? %action
+    ~please? %action ~also ~please? %action ~also ~please? %action
+    ~please? %action ~also ~please? %action ~also ~please? %action ~also ~please? %action
 
 %time=
     %relative_time
@@ -47,40 +44,40 @@
     %getPrice
     %getTemperature
 
-%action
+%action=
     ~get %getValue
     %setLightState
     %setSwitchState
     %setTemperature
     %setVolume
     %playMusic
-
+    
 # Specific commands
 # ---------------------------------------------------------
 
 %checkLightState
-    the $light is $on_off
+    the $light_name is $on_off
 
 %checkSwitchState
-    the $switch is $on_off
+    the $switch_name is $on_off
 
 %getLightState
-    the $light state
+    the $light_name state
 
 %getSwitchState
-    the $switch state
-
+    the $switch_name state
+   
 %getTemperature
-    the temperature in the $room
-    the $room temperature
+    the temperature in the $room_name
+    the $room_name temperature
 
 %getPrice
     price of $asset
     $asset price
 
 %setLightState
-    ~set the $light %light_state
-    ~set $on_off the $light
+    ~set the $light_name %light_state
+    ~set $on_off the $light_name
 
 %light_state=
     $on_off
@@ -88,19 +85,19 @@
     $color
 
 %setSwitchState
-    ~set the $switch $on_off
-    ~set $on_off the $switch
+    ~set the $switch_name $on_off
+    ~set $on_off the $switch_name
 
 %setTemperature
-    ~set the $room temperature to $number
-    ~set the temperature of $room to $number
+    ~set the $room_name temperature to $temperature
+    ~set the temperature of $room_name to $temperature
 
 %setVolume
     ~set the volume $up_down
 
 %playMusic
-    play $song
-    play ~something_by $artist
+    play $song_name
+    play ~something_by $artist_name
 
 # Synonyms
 # ---------------------------------------------------------
@@ -201,7 +198,7 @@ $asset
     yen
     pesos
 
-$room
+$room_name
     office
     living room
     bedroom
@@ -210,7 +207,7 @@ $room
     bathroom
     outside
 
-$light
+$light_name
     office light
     living room light
     bedroom light
@@ -219,7 +216,7 @@ $light
     bathroom light
     outside light
 
-$switch
+$switch_name
     tea switch
     tea
     light switch
@@ -268,13 +265,18 @@ $time_unit
     minutes
     hours
     days
+    
+$temperature
+    $_number
+    $_number F
+    $_number C
 
 $time
     $_number pm
-    $_number am
+    $_number am    
     $_number : $_number
 
-$artist
+$artist_name
     Isigin Yansimasi
     Duman
     Placebo
@@ -323,7 +325,7 @@ $artist
     Reha Falay
     Muse
 
-$song
+$song_name
     All I Have To Do Is Dream
     Love It When You Call
     Chelsea Dagger
