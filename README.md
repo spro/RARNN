@@ -2,7 +2,7 @@
 
 A simple model for intent parsing that supports complex nested intents.
 
-![](https://i.imgur.com/1MF5aLE.png)
+![](https://i.imgur.com/DBNHrnR.png)
 
 ## Model
 
