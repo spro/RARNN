@@ -28,7 +28,7 @@
 
 %condition
     %checkValue
-    %getNumberValue is $operator $number
+    %getNumberValue ~is $operator $number
 
 %checkValue=
     %checkLightState
@@ -106,6 +106,12 @@
     if
     when
     as soon as
+
+~is
+    is
+    goes
+    gets
+    becomes
 
 ~in
     in
@@ -186,7 +192,9 @@
 $operator
     equal to
     greater than
+    above
     less than
+    below
 
 $asset
     bitcoin
@@ -247,6 +255,7 @@ $color
 $number
     $_number
     $_number $_number
+    $_number $_number $_number
 
 $_number=
     1
