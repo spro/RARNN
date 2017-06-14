@@ -1,49 +1,8 @@
 # Recursive Application of Recurrent Neural Networks
 
-A model for intent parsing that supports complex nested intents.
+A simple model for intent parsing that supports complex nested intents.
 
-```
-> If the temperature in Tokyo is equal to 56 then turn off the living room light.
-```
-
-The intent can be represented as a tree of phrases and values:
-
-```
-( %if
-	( %condition
-		( %getWeather
-			( $key temperature )
-			( $location Tokyo ) )
-		( $operator equal to )
-		( $number 56 ) )
-	( %command
-		( %setLightState
-			( $on_off off )
-			( $light_name living room light ) ) ) )
-```
-
-The goal of RARNN is to recursively identify phrases and their top-level components (sub-phrases and values), then recursively visit sub-phrases to find their components, until a full phrase tree is built.
-
-## Example
-
-For the above sentence,
-
-1. Applied to the whole sentence, the model would recognize the overarching `%if` phrase.
-
-2. Applied to the `%if` phrase (which happens to be the whole sentence), the model would recognize sub-phrases `%condition` and `%command` (marked with square brackets).
-	```
-	> If [the temperature in Tokyo is equal to 56] then [turn off the living room light].
-	```
-
-3. Applied to the `%condition` phrase, the model would recognize the `%getWeather` sub-phrase and `$operator` and `$number` values.
-	```
-	> [the temperature in Tokyo] is [equal to] [56]
-	```
-
-4. Applied to the `%getWeather` phrase, the model would recognize the `$temperature` and `$location` values.
-	```
-	> the [temperature] in [Tokyo]
-	```
+![](https://i.imgur.com/1MF5aLE.png)
 
 ## Model
 
@@ -54,4 +13,41 @@ The encoder and decoder take one additional input `context` which represents the
 The encoder encodes the input sequence into a series of vectors using a bidirectional GRU. The decoder "translates" this into a sequence of phrase tokens, given the encoder outputs and current context, e.g. "turn off the office light" + `%setLightState` &rarr; `[$on_off, $light]`.
 
 Once the decoder has chosen tokens and alignments, the phrase tokens and selection of inputs are used as the context and inputs of the next iteration. This recurs until no more phrase tokens are found.
+
+## Data
+
+Of course in order to parse a nested intent sructure, we need nested intent training data. Examples are generated with a natural language templating language called [Nalgene](https://github.com/spro/nalgene) which generates both a flat string and a parse tree. Templates define a number of `%phrases` and `$values` (leaf nodes) as well as filler `~synonyms` and the generator takes a random walk down the tree to build each example. Here's a snippet from the grammar file:
+
+```
+%if
+    ~if %condition then %sequence
+
+%sequence
+    ~please? %action
+    ~please? %action ~also ~please? %action
+
+%getSwitchState
+    the $switch_name state
+   
+%getTemperature
+    the temperature in the $room_name
+    the $room_name temperature
+
+%getPrice
+    price of $asset
+    $asset price
+```
+
+## Author
+
+Sean Robertson
+
+```bibtex
+@misc{Robertson2017,
+    author = {Robertson, Sean},
+    title = {Recursive Application of Recurrent Neural Networks},
+    year = {2017},
+    url = {https://github.com/spro/RARNN}
+}
+```
 
