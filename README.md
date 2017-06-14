@@ -6,7 +6,7 @@ A simple model for intent parsing that supports complex nested intents.
 
 ## Model
 
-The core model is a regular seq2seq/encoder-decoder model with attention. The attention model is from [Luong et al.'s "Effective Approaches to Attention-based Neural Machine Translation"](https://arxiv.org/abs/1508.04025) using dot-product based attention energies, with one important difference: there is no softmax layer, allowing attention to focus on multiple tokens at once. Instead a sigmoid layer is added to squeeze outputs between 0 and 1.
+The core of the model is a regular seq2seq/encoder-decoder model with attention. The attention model is from [Luong et al.'s "Effective Approaches to Attention-based Neural Machine Translation"](https://arxiv.org/abs/1508.04025) using dot-product based attention energies, with one important difference: there is no softmax layer, allowing attention to focus on multiple tokens at once. Instead a sigmoid layer is added to squeeze outputs between 0 and 1.
 
 The encoder and decoder take one additional input `context` which represents the type of phrase, e.g. `%setLightState`. At the top level node the context is always `%`.
 
@@ -16,7 +16,7 @@ Once the decoder has chosen tokens and alignments, the phrase tokens and selecti
 
 ## Data
 
-Of course in order to parse a nested intent sructure, we need nested intent training data. Examples are generated with a natural language templating language called [Nalgene](https://github.com/spro/nalgene) which generates both a flat string and a parse tree. Templates define a number of `%phrases` and `$values` (leaf nodes) as well as filler `~synonyms` and the generator takes a random walk down the tree to build each example. Here's a snippet from the grammar file:
+Of course in order to parse a nested intent structure, we need nested intent training data. Examples are generated with a natural language templating language called [Nalgene](https://github.com/spro/nalgene) which produces both a flat string (input) and a parse tree (output). Templates define a number of `%phrases` and `$values` (leaf nodes) as well as filler `~synonyms`. The generator takes a random walk down the tree to build each example. Here's a snippet from the grammar file:
 
 ```
 %if
