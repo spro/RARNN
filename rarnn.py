@@ -382,25 +382,26 @@ if sys.argv[1] == 'train':
 
     # Train
 
-    for i in range(n_epochs):
-        walked_flat, walked_tree = walk_tree(parsed, parsed['%'], None)
-        def _train(node): return train(walked_flat, node)
-        ds = descend(walked_tree, _train)
-        d = sum(ds) / len(ds)
-        job.record(i, d)
+    try:
+        for i in range(n_epochs):
+            walked_flat, walked_tree = walk_tree(parsed, parsed['%'], None)
+            def _train(node): return train(walked_flat, node)
+            ds = descend(walked_tree, _train)
+            d = sum(ds) / len(ds)
+            job.record(i, d)
+    except KeyboardInterrupt:
+        print("Saving before quit...")
+    finally:
+        torch.save(rarnn, 'rarnn.pt')
+        print("Saved as rarnn.pt")
 
     # Evaluate
 
-    evaluate_randomly()
     evaluate_and_print('%', "hey maia if the ethereum price is less than 2 0 then turn the living room light on".split(' '))
     evaluate_and_print('%', "hey maia what's the ethereum price".split(' '))
     evaluate_and_print('%', "hey maia play some Skrillex please and then turn the office light off".split(' '))
     evaluate_and_print('%', "turn the office light up and also could you please turn off the living room light and make the temperature of the bedroom to 6 thank you maia".split(' '))
     evaluate_and_print('%', "turn the living room light off and turn the bedroom light up and also turn the volume up".split(' '))
-
-    # Save
-
-    torch.save(rarnn, 'rarnn.pt')
 
 elif sys.argv[1] == 'service':
     rarnn = torch.load('rarnn.pt')
