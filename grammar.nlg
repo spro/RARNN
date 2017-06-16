@@ -7,6 +7,8 @@
 %if
     ~if %condition then %sequence
     %sequence ~if %condition
+    ~if %condition %sendMessage
+    %sendMessage ~if %condition
 
 %timer
     %sequence %time
@@ -49,9 +51,29 @@
     %setTemperature
     %setVolume
     %playMusic
-    
+
 # Specific commands
 # ---------------------------------------------------------
+
+%sendMessage
+    $message_type me
+    ~send a $message_type
+    ~send me a $message_type
+
+$message_type
+    sms
+    text
+    email
+    call
+    chat
+    message
+    ping
+
+~send
+    send
+    deliver
+    shoot
+    give
 
 %getLightState
     ~get? the $light_name state
@@ -244,12 +266,19 @@ $color
     white
     orange
 
-$number
-    $_number
-    $_number $_number
-    $_number $_number $_number
+# Numbers and time
 
-$_number=
+$number
+    $digits
+
+$digits=
+    $digit
+    $digit $digit
+    $digit $digit $digit
+    $digit $digit $digit $digit
+
+$digit=
+    0
     1
     2
     3
@@ -259,7 +288,6 @@ $_number=
     7
     8
     9
-    0
 
 $time_unit
     seconds
@@ -268,14 +296,29 @@ $time_unit
     days
     
 $temperature
-    $_number
-    $_number F
-    $_number C
+    $digits ~f_c?
+
+~f_c
+    f
+    c
 
 $time
-    $_number pm
-    $_number am    
-    $_number : $_number
+    $hour : $minute ~am_pm?
+
+~am_pm
+    am
+    pm
+
+$hour
+    $digit
+    $digit $digit
+
+$minute
+    0 $digit
+    $digit $digit
+
+# Music
+# TODO: Import or generate
 
 $artist_name
     Isigin Yansimasi
