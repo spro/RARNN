@@ -2,15 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import sconce
-import somata
-
 from nalgene.generate import *
+import somata
+import sconce
 
 USE_CUDA = False
+SHOW_ATTENTION = False
+MAX_LENGTH = 50
 
-parsed = parse_file('.', 'grammar.nlg')
-parsed.map_leaves(tokenizeLeaf)
+hidden_size = 100
+learning_rate = 1e-4
+weight_decay = 1e-6
+n_epochs = 5000
 
 def descend(node, fn, child_type='phrase', returns=None):
     if returns is None: returns = []
@@ -28,24 +31,6 @@ def ascend(node, fn):
         return fn(node)
     else:
         return ascend(node.parent, fn)
-
-# Building input and output vocabularies
-
-input_tokens = []
-
-def get_input_tokens(node):
-    if node.type == 'word':
-        input_tokens.append(node.key)
-
-descend(parsed, get_input_tokens, None)
-
-input_tokens = list(set(input_tokens))
-input_tokens = ['EOS'] + input_tokens
-print(input_tokens)
-
-output_tokens = [child.key for child in parsed.children if child.type in ['phrase', 'variable']]
-output_tokens = ['EOS'] + output_tokens
-print(output_tokens)
 
 # Getting input and target data for nodes
 
@@ -67,9 +52,6 @@ def data_for_node(flat, node):
     positions = [relative_position(child, node) for child in node.children]
     return node.key, inputs, list(zip(keys, positions))
 
-walked_flat, walked_tree = walk_tree(parsed, parsed['%'], None)
-data_for_node(walked_flat, walked_tree.children[0])
-
 # Creating tensors for input and target data
 
 def tokens_to_tensor(tokens, source_tokens, append_eos=True):
@@ -86,8 +68,6 @@ def ranges_to_tensor(ranges, seq_len):
         start, end, _ = ranges[r]
         ranges_tensor[r, start:end+1] = 1
     return ranges_tensor
-
-ranges_to_tensor([(0, 2, 3), (4, 4, 1)], 5)
 
 # Model
 
@@ -176,20 +156,20 @@ class Decoder(nn.Module):
         # Return final output, hidden state, and attention weights (for visualization)
         return output, hidden, attention_weights
 
-MAX_LENGTH = 50
-
 class RARNN(nn.Module):
-    def __init__(self, input_size, output_size, hidden_size):
+    def __init__(self, input_tokens, output_tokens, hidden_size):
         super(RARNN, self).__init__()
 
-        self.input_size = input_size
-        self.output_size = output_size
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
+        self.input_size = len(input_tokens)
+        self.output_size = len(output_tokens)
         self.hidden_size = hidden_size
 
-        self.embedding = nn.Embedding(output_size, hidden_size)
+        self.embedding = nn.Embedding(self.output_size, hidden_size)
 
-        self.encoder = Encoder(input_size, hidden_size)
-        self.decoder = Decoder(hidden_size, output_size)
+        self.encoder = Encoder(self.input_size, hidden_size)
+        self.decoder = Decoder(hidden_size, self.output_size)
 
     def forward(self, context_input, word_inputs, word_targets=None):
         # Get embedding for context input
@@ -206,7 +186,7 @@ class RARNN(nn.Module):
             decoder_input = decoder_input.cuda()
 
         # Variables to store decoder and attention outputs
-        decoder_outputs = Variable(torch.zeros(target_len, output_size))
+        decoder_outputs = Variable(torch.zeros(target_len, self.output_size))
         decoder_attentions = Variable(torch.zeros(target_len, input_len))
         if USE_CUDA:
             decoder_outputs = decoder_outputs.cuda()
@@ -242,30 +222,17 @@ class RARNN(nn.Module):
 
 # Training
 
-input_size = len(input_tokens)
-output_size = len(output_tokens)
-hidden_size = 100
-
-learning_rate = 1e-4
-weight_decay = 1e-6
-
-rarnn = RARNN(input_size, output_size, hidden_size)
-optimizer = torch.optim.Adam(rarnn.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
-decoder_criterion = nn.NLLLoss()
-attention_criterion = nn.MSELoss(size_average=False)
-
 def train(flat, node):
     context, inputs, targets = data_for_node(flat, node)
 
     # Turn inputs into tensors
-    context_var = tokens_to_tensor([context], output_tokens, False)
+    context_var = tokens_to_tensor([context], rarnn.output_tokens, False)
     context_var = Variable(context_var)
-    inputs_var = tokens_to_tensor(inputs, input_tokens).view(-1, 1, 1) # seq x batch x size
+    inputs_var = tokens_to_tensor(inputs, rarnn.input_tokens).view(-1, 1, 1) # seq x batch x size
     inputs_var = Variable(inputs_var)
     target_tokens = [target_token for target_token, _ in targets]
     target_ranges = [target_range for _, target_range in targets]
-    target_tokens_var = tokens_to_tensor(target_tokens, output_tokens)
+    target_tokens_var = tokens_to_tensor(target_tokens, rarnn.output_tokens)
     target_tokens_var = Variable(target_tokens_var)
     target_ranges_var = ranges_to_tensor(target_ranges, len(inputs) + 1)
     target_ranges_var = Variable(target_ranges_var)
@@ -283,29 +250,17 @@ def train(flat, node):
 
     return total_loss.data[0]
 
-job = sconce.Job('rarnn')
-job.plot_every = 20
-job.log_every = 100
-
-n_epochs = 5000
-
-for i in range(n_epochs):
-    walked_flat, walked_tree = walk_tree(parsed, parsed['%'], None)
-    def _train(node): return train(walked_flat, node)
-    ds = descend(walked_tree, _train)
-    d = sum(ds) / len(ds)
-    job.record(i, d)
-
 # Evaluating
 
 def evaluate(context, inputs, node=None):
     if node == None:
         node = Node('parsed')
+        node.position = (0, len(inputs) - 1)
 
     # Turn data into tensors
-    context_var = tokens_to_tensor([context], output_tokens, False)
+    context_var = tokens_to_tensor([context], rarnn.output_tokens, False)
     context_var = Variable(context_var)
-    inputs_var = tokens_to_tensor(inputs, input_tokens).view(-1, 1, 1) # seq x batch x size
+    inputs_var = tokens_to_tensor(inputs, rarnn.input_tokens).view(-1, 1, 1) # seq x batch x size
     inputs_var = Variable(inputs_var)
 
     # Run through RARNN
@@ -316,27 +271,46 @@ def evaluate(context, inputs, node=None):
 
     next_contexts = []
     next_inputs = []
+    next_positions = []
 
     for i in range(len(decoder_outputs)):
         max_value, max_index = decoder_outputs[i].topk(1)
         max_index = max_index.data[0]
-        next_contexts.append(output_tokens[max_index]) # Get decoder output token
+        next_contexts.append(rarnn.output_tokens[max_index]) # Get decoder output token
         a = attention_outputs[i]
         next_input = []
+        next_position = []
         for t in range(len(a) - 1):
             at = a[t].data[0]
             if at > 0.5:
+                if len(next_position) == 0: # Start position
+                    next_position.append(t)
                 next_input.append(inputs[t])
+            else:
+                if len(next_position) == 1: # End position
+                    next_position.append(t - 1)
+        if len(next_position) == 1: # End position
+            next_position.append(t)
         next_inputs.append(next_input)
+        next_position = (next_position[0] + node.position[0], next_position[1] + node.position[0])
+        next_positions.append(next_position)
 
-    evaluated = list(zip(next_contexts, next_inputs))
+    evaluated = list(zip(next_contexts, next_inputs, next_positions))
 
     # Print decoded outputs
     print('\n(evaluate) %s %s -> %s' % (context, ' '.join(inputs), next_contexts))
 
-    for context, inputs in evaluated:
+    # Plot attention outputs
+    if SHOW_ATTENTION:
+        fig = plt.figure(figsize=(len(inputs) / 3, 99))
+        sub = fig.add_subplot(111)
+        sub.matshow(attention_outputs.data.squeeze(1).numpy(), vmin=0, vmax=1, cmap='hot')
+        plt.show(); plt.close()
+
+    for context, inputs, position in evaluated:
         # Add a node for parsed sub-phrases and values
         sub_node = Node(context)
+        sub_node.position = position
         node.add(sub_node)
 
         # Recursively evaluate sub-phrases
@@ -358,32 +332,77 @@ def evaluate_and_print(context, inputs):
     print(evaluated)
     return evaluated
 
-walked_flat, walked_tree = walk_tree(parsed, parsed['%'], None)
-inputs = [child.key for child in walked_flat.children]
-print(inputs, walked_tree)
-evaluate_and_print('%', inputs)
-
-evaluate_and_print('%', "hey maia if the ethereum price is less than 2 0 then turn the living room light on".split(' '))
-evaluate_and_print('%', "hey maia what's the ethereum price".split(' '))
-evaluate_and_print('%', "hey maia play some Skrillex please and then turn the office light off".split(' '))
-evaluate_and_print('%', "turn the office light up and also could you please turn off the living room light and make the temperature of the bedroom to 6 thank you maia".split(' '))
-evaluate_and_print('%', "turn the living room light off and turn the bedroom light up and also turn the volume up".split(' '))
-
-def node_to_list(node):
-    l = []
-    for n in node:
-        if n.is_leaf:
-            l.append(n.key)
-        else:
-            l += [n.key, node_to_list(n)]
-    return l
+def prepare_string(s):
+    s = re.sub(r'(\d)', r'\1 ', s)
+    s = re.sub(r'\s+', ' ', s)
+    return s.split(' ')
 
 def parse(s, cb):
-    evaluated = evaluate_and_print('%', s.split(' '))
-    cb({'evaluated': node_to_list(evaluated)})
+    words = prepare_string(s)
+    try:
+        evaluated = evaluate_and_print('%', words)
+        cb({'words': words, 'parsed': evaluated.to_json()})
+    except Exception:
+        cb({'error': "Failed to evaluate"})
 
-parse('hey maia if the price of bitcoin is greater than 3 0 0 0 turn the office light off', lambda r: print("response", r))
+if sys.argv[1] == 'train':
 
-torch.save(rarnn, 'rarnn.pt')
+    # Build input and output vocabularies
 
-service = somata.Service('maia:parser', {'parse': parse}, {'bind_port': 8855})
+    parsed = parse_file('.', 'grammar.nlg')
+    parsed.map_leaves(tokenizeLeaf)
+
+    input_tokens = []
+
+    def get_input_tokens(node):
+        if node.type == 'word':
+            input_tokens.append(node.key)
+
+    descend(parsed, get_input_tokens, None)
+
+    input_tokens = list(set(input_tokens))
+    input_tokens = ['EOS'] + input_tokens
+    print(input_tokens)
+
+    output_tokens = [child.key for child in parsed.children if child.type in ['phrase', 'variable']]
+    output_tokens = ['EOS'] + output_tokens
+    print(output_tokens)
+
+    # Initialize model, optimizer, criterions
+
+    rarnn = RARNN(input_tokens, output_tokens, hidden_size)
+    optimizer = torch.optim.Adam(rarnn.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    decoder_criterion = nn.NLLLoss()
+    attention_criterion = nn.MSELoss(size_average=False)
+
+    job = sconce.Job('rarnn')
+    job.plot_every = 20
+    job.log_every = 100
+
+    # Train
+
+    for i in range(n_epochs):
+        walked_flat, walked_tree = walk_tree(parsed, parsed['%'], None)
+        def _train(node): return train(walked_flat, node)
+        ds = descend(walked_tree, _train)
+        d = sum(ds) / len(ds)
+        job.record(i, d)
+
+    # Evaluate
+
+    evaluate_randomly()
+    evaluate_and_print('%', "hey maia if the ethereum price is less than 2 0 then turn the living room light on".split(' '))
+    evaluate_and_print('%', "hey maia what's the ethereum price".split(' '))
+    evaluate_and_print('%', "hey maia play some Skrillex please and then turn the office light off".split(' '))
+    evaluate_and_print('%', "turn the office light up and also could you please turn off the living room light and make the temperature of the bedroom to 6 thank you maia".split(' '))
+    evaluate_and_print('%', "turn the living room light off and turn the bedroom light up and also turn the volume up".split(' '))
+
+    # Save
+
+    torch.save(rarnn, 'rarnn.pt')
+
+elif sys.argv[1] == 'service':
+    rarnn = torch.load('rarnn.pt')
+    service = somata.Service('maia:parser', {'parse': parse}, {'bind_port': 8855})
+
