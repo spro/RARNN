@@ -1,0 +1,4 @@
+*.swp
+*.pt
+node_modules
+.ipynb_checkpoints
