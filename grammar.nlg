@@ -3,8 +3,10 @@
     ~prefix? %timer ~suffix?
     ~prefix? %sequence ~suffix?
 
+# TODO: %if vs. %when
 %if
     ~if %condition then %sequence
+    %sequence ~if %condition
 
 %timer
     %sequence %time
@@ -27,25 +29,21 @@
     ~at $time
 
 %condition
-    %checkValue
-    %getNumberValue ~is $operator $number
+    %getValue %compare $number
 
-%checkValue=
-    %checkLightState
-    %checkSwitchState
+%compare=
+    ~is
+    ~is $operator
 
-%getNumberValue=
+%getValue
     %getPrice
     %getTemperature
 
-%getValue=
+%action
     %getLightState
     %getSwitchState
     %getPrice
     %getTemperature
-
-%action=
-    ~get %getValue
     %setLightState
     %setSwitchState
     %setTemperature
@@ -55,25 +53,19 @@
 # Specific commands
 # ---------------------------------------------------------
 
-%checkLightState
-    the $light_name is $on_off
-
-%checkSwitchState
-    the $switch_name is $on_off
-
 %getLightState
-    the $light_name state
+    ~get? the $light_name state
 
 %getSwitchState
-    the $switch_name state
+    ~get? the $switch_name state
    
 %getTemperature
-    the temperature in the $room_name
-    the $room_name temperature
+    ~get? the temperature in the $room_name
+    ~get? the $room_name temperature
 
 %getPrice
-    price of $asset
-    $asset price
+    ~get? price of $asset
+    ~get? $asset price
 
 %setLightState
     ~set the $light_name %light_state
