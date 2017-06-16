@@ -1,0 +1,67 @@
+*
+    margin: 0
+    padding: 0
+    box-sizing: border-box
+
+body
+    background: #f8f8f8
+    padding: 20px
+    font: 14px "Arimo"
+    transform-style: preserve-3d
+
+.svg
+    background: #fff
+    div, span
+        display: block
+        position: absolute
+        text-align: center
+
+.index
+    font-size: 11px
+    opacity: 0.0
+    width: 100%
+
+.token
+    font-size: 11px
+    font-weight: bold
+    font-family: Menlo
+
+div.level
+    animation-duration: 0.5s
+    animation-name: fadeIn
+    animation-fill-mode: forwards
+
+div.under
+
+    div
+        transform-origin: top center
+        animation-duration: 0.5s
+        animation-name: rotateIn
+        animation-fill-mode: forwards
+
+@keyframes rotateIn
+    0%
+        transform: perspective(50px) rotateX(-70deg)
+
+    100%
+        transform: perspective(50px) rotateX(-10deg)
+
+@keyframes fadeIn
+    0%
+        opacity: 0
+
+    100%
+        opacity: 1
+
+input
+    -webkit-appearance: none
+    border: none
+    outline: none
+    background: transparent
+    width: 98%
+    padding: 8px 0px
+    font: inherit
+    border-bottom: 2px solid #eee
+    &:focus
+        border-bottom: 2px solid #39f
+
