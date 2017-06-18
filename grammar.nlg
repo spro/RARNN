@@ -344,7 +344,6 @@ $stock
     @kitchen
     @bathroom
     @outside
-    @all
     
 @office
     office
@@ -375,20 +374,15 @@ $stock
     outdoor
     outdoors
 
-@all
-    all the lights
-    every light
-    all lights
-    everything
-
 %light_name
     @office_light
     @living_room_light
-    @bedroom_light
+    @bedroom_lights
     @basement_light
     @kitchen_light
     @bathroom_light
     @outside_light
+    @all_lights
 
 @office_light
     the office light
@@ -399,8 +393,8 @@ $stock
     the light in the living room
     the light in the den
 
-@bedroom_light
-    the bedroom light
+@bedroom_lights
+    the bedroom lights
     my lights
 
 @basement_light
@@ -414,6 +408,12 @@ $stock
 
 @outside_light
     the outside light
+
+@all_lights
+    all the lights
+    every light
+    all lights
+    everything
 
 %switch_name
     @tea_switch
