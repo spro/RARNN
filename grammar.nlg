@@ -344,6 +344,7 @@ $stock
     @kitchen
     @bathroom
     @outside
+    @all
     
 @office
     office
@@ -373,6 +374,12 @@ $stock
     outside
     outdoor
     outdoors
+
+@all
+    all the lights
+    every light
+    all lights
+    everything
 
 %light_name
     @office_light
