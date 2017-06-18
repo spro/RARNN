@@ -6,6 +6,7 @@ from torchtext.vocab import load_word_vectors
 from nalgene.generate import *
 import somata
 import sconce
+import traceback
 
 USE_CUDA = False
 SHOW_ATTENTION = False
@@ -377,15 +378,8 @@ def evaluate_and_print(context, inputs):
     print(evaluated)
     return evaluated
 
-def prepare_string(s):
-    s = re.sub(r'(\d)', r'\1 ', s)
-    s = re.sub(r'\s+', ' ', s)
-    return s.split(' ')
-
-import traceback
-
 def parse(s, cb):
-    words = prepare_string(s)
+    words = tokenize_sentence(s)
     try:
         evaluated = evaluate_and_print('%', words)
         cb({'words': words, 'parsed': evaluated.to_json()})
