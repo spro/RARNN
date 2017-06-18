@@ -1,31 +1,45 @@
 %
-    ~prefix? %if ~suffix?
-    ~prefix? %timer ~suffix?
-    ~prefix? %sequence ~suffix?
+    ~prefix? %main ~suffix?
+    %greeting
+    %thanks
+
+%main=
+    %sequence
+    %if
+    %timer
+    %alarm
+#    %reminder
 
 # TODO: %if vs. %when
 %if
     ~if %condition then %sequence
     %sequence ~if %condition
-    ~if %condition %sendMessage
-    %sendMessage ~if %condition
+    ~if %condition %alert
+    %alert ~if %condition
 
 %timer
     %sequence %time
     %time %sequence
+
+%alarm
+    ~set an alarm %time
+
+%reminder
+    remind me to $message
 
 %sequence
     ~please? %action
     ~please? %action ~also ~please? %action
     ~please? %action ~also ~please? %action ~also ~please? %action
     ~please? %action ~also ~please? %action ~also ~please? %action ~also ~please? %action
+#   [~please %action ~also]
 
 %time=
     %relative_time
     %absolute_time
 
 %relative_time
-    ~in $number $time_unit
+    ~in $number %time_unit
 
 %absolute_time
     ~at $time
@@ -35,7 +49,7 @@
 
 %compare=
     ~is
-    ~is $operator
+    ~is %operator
 
 %getValue
     %getPrice
@@ -51,20 +65,44 @@
     %setTemperature
     %setVolume
     %playMusic
+#    %sendMessage
 
 # Specific commands
 # ---------------------------------------------------------
 
-%sendMessage
-    $message_type me
-    ~send a $message_type
-    ~send me a $message_type
+%alert
+    %message_type me
+    ~send a %message_type
+    ~send me a %message_type
+#    let me know (%message_type=@chat)
 
-$message_type
+%message
+    ~send a %message_type to $person
+    %message_type $person
+    ~send $person a %message_type
+    tell $person $message
+
+%message_type
+    @sms
+    @call
+    @email
+    @chat
+
+@sms
     sms
     text
+
+@email
     email
+    e-mail
+    mail
+
+@call
     call
+    phone call
+    ring
+    
+@chat
     chat
     message
     ping
@@ -76,42 +114,43 @@ $message_type
     give
 
 %getLightState
-    ~get? the $light_name state
+    ~get? the %light_name state
 
 %getSwitchState
-    ~get? the $switch_name state
-   
+    ~get? the %switch_name state
+
 %getTemperature
-    ~get? the temperature in the $room_name
-    ~get? the $room_name temperature
+    ~get? the temperature in the %room_name
+    ~get? the %room_name temperature
 
 %getPrice
-    ~get? price of $asset
-    ~get? $asset price
+    ~get? price of %asset
+    ~get? %asset price
 
 %setLightState
-    ~set the $light_name %light_state
-    ~set $on_off the $light_name
-
-%light_state=
-    $on_off
-    $up_down
-    $color
+    ~set %light_name %light_state
+    ~set %light_state %light_name
 
 %setSwitchState
-    ~set the $switch_name $on_off
-    ~set $on_off the $switch_name
+    ~set %switch_name %switch_state
+    ~set %switch_state %switch_name
 
 %setTemperature
-    ~set the $room_name temperature to $temperature
-    ~set the temperature of $room_name to $temperature
+    ~set the %room_name temperature to $temperature
+    ~set the temperature of %room_name to $temperature
 
 %setVolume
-    ~set the volume $up_down
+    ~set the volume %volume_state
 
 %playMusic
     play $song_name
     play ~something_by $artist_name
+
+%greeting
+    ~greeting
+
+%thanks
+    ~thanks
 
 # Synonyms
 # ---------------------------------------------------------
@@ -144,6 +183,7 @@ $message_type
     tell me
     what is
     what's the
+    gimme
 
 ~prefix
     um
@@ -169,9 +209,26 @@ $message_type
     pretty please
     could you
     could you please
+    you oughta
+    you better
+    you should ~definitely
+    ~definitely
+    just like
+    ok so
+    could ya
+    would ya
+
+~definitely
+    definitely
+    totally
+    def
+    totes
 
 ~suffix
     ~thanks
+    ~please
+    ~alright
+    ~lol
 
 ~thanks
     thank you
@@ -180,6 +237,20 @@ $message_type
     thank you very much
     thanks maia
     thank you maia
+
+~alright
+    alright
+    aight
+    you got it
+    you understand
+    or else
+    you noob
+
+~lol
+    lol
+    haha
+    wtf
+    omg
 
 ~also
     and
@@ -191,7 +262,7 @@ $message_type
     and then
     and next
     then next
-    and could you also
+    and ~please could you also
 
 ~something_by
     something by
@@ -199,63 +270,200 @@ $message_type
     some music by
     a song from
     shit by
+    some shit from
 
 # Values
 # ---------------------------------------------------------
 
-$operator
-    equal to
-    greater than
-    above
-    less than
-    below
+$message
+    get the laundry
+    do the dishes
+    buy soap
+    go to sleep
+    milk is in the fridge
+    ~i_ll be ~timing
 
-$asset
+~i_ll
+    i will
+    i'll
+    i shall
+    i might
+
+~timing
+    late
+    early
+    on time
+    there soon
+    there at $time
+
+%operator
+    @equal
+    @greater_than
+    @less_than
+
+@equal
+    equal to
+
+@greater_than
+    greater than
+    bigger than
+    above
+
+@less_than
+    less than
+    smaller than
+    below
+    under
+
+%asset
+    @btc
+    @eth
+    $stock
+
+@btc
     bitcoin
     btc
+
+@eth
     ethereum
     eth
+
+$stock
     tesla
     microsoft
-    yen
-    pesos
+    apple
+    amazon
+    spacex
+    trulia
 
-$room_name
+%room_name
+    @office
+    @living_room
+    @bedroom
+    @basement
+    @kitchen
+    @bathroom
+    @outside
+    
+@office
     office
+    
+@living_room
     living room
+    den
+    family room
+    
+@bedroom
     bedroom
+    my room
+    
+@basement
     basement
+    downstairs
+    
+@kitchen
     kitchen
+    
+@bathroom
     bathroom
+    shitter
+    loo
+    
+@outside
     outside
+    outdoor
+    outdoors
 
-$light_name
-    office light
-    living room light
-    bedroom light
-    basement light
-    kitchen light
-    bathroom light
-    outside light
+%light_name
+    @office_light
+    @living_room_light
+    @bedroom_light
+    @basement_light
+    @kitchen_light
+    @bathroom_light
+    @outside_light
 
-$switch_name
-    tea switch
-    tea
-    light switch
-    office switch
-    coffee
-    coffee pot
-    hot plate
+@office_light
+    the office light
+    the light in the office
 
-$on_off
+@living_room_light
+    the living room light
+    the light in the living room
+    the light in the den
+
+@bedroom_light
+    the bedroom light
+    my lights
+
+@basement_light
+    the basement light
+
+@kitchen_light
+    the kitchen light
+
+@bathroom_light
+    the bathroom light
+
+@outside_light
+    the outside light
+
+%switch_name
+    @tea_switch
+    @coffee_switch
+
+@tea_switch
+    the tea switch
+    the tea
+    the hot plate
+
+@coffee_switch
+    the coffee
+    the coffee pot
+
+%light_state
+    @on
+    @off
+    @up
+    @down
+    @high
+    @low
+    $color
+
+%switch_state
+    @on
+    @off
+
+%volume_state
+    @on
+    @off
+    @up
+    @down
+    to $number
+
+@on
     on
+
+@off
     off
 
-$up_down
-    high
-    low
+@up
     up
+    higher
+    brighter
+
+@down
     down
+    lower
+    darker
+
+@high
+    high
+    bright
+
+@low
+    low
+    dark
 
 $color
     red
@@ -289,12 +497,36 @@ $digit=
     8
     9
 
-$time_unit
+%time_unit
+    @seconds
+    @minutes
+    @hours
+    @days
+
+@seconds
     seconds
+    secs
+    sec
+    s
+
+@minutes
     minutes
+    mins
+    min
+    m
+
+@hours
     hours
+    hour
+    hrs
+    hr
+    h
+
+@days
     days
-    
+    day
+    d
+
 $temperature
     $digits ~f_c?
 
