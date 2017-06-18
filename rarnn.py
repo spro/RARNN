@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from torchtext.vocab import load_word_vectors
 from nalgene.generate import *
 import somata
 import sconce
@@ -10,10 +11,44 @@ USE_CUDA = False
 SHOW_ATTENTION = False
 MAX_LENGTH = 50
 
+input_size = 100
 hidden_size = 100
 learning_rate = 1e-4
 weight_decay = 1e-6
 n_epochs = 5000
+
+def tokenize_sentence(s):
+    s = s.lower()
+    s = re.sub(r'(\d)', r'\1 ', s)
+    s = re.sub(r'[^a-z0-9 \']', ' ', s)
+    s = re.sub(r'\s+', ' ', s).strip()
+    return s.split(' ')
+
+class GloVeLang:
+    def __init__(self, size):
+        self.size = size
+        base_dir = '.'
+        glove_dict, glove_arr, glove_size = load_word_vectors(base_dir, 'glove.twitter.27B', size)
+        self.glove_dict = glove_dict
+        self.glove_arr = glove_arr
+
+    def __str__(self):
+        return "%s(size = %d)" % (self.__class__.__name__, self.size)
+
+    def vector_from_word(self, word):
+        if word in self.glove_dict:
+            return self.glove_arr[self.glove_dict[word]]
+        else:
+            return torch.zeros(self.size)
+
+    def tokens_to_tensor(self, words):
+        tensor = torch.zeros(len(words), 1, self.size)
+        for wi in range(len(words)):
+            word = words[wi]
+            tensor[wi][0] = self.vector_from_word(word)
+        return tensor
+
+input_lang = GloVeLang(input_size)
 
 def descend(node, fn, child_type='phrase', returns=None):
     if returns is None: returns = []
@@ -79,7 +114,7 @@ class Encoder(nn.Module):
         self.hidden_size = hidden_size
         self.n_layers = n_layers
 
-        self.embedding = nn.Embedding(input_size, hidden_size)
+        self.embedding = nn.Linear(input_size, hidden_size)
         self.gru = nn.GRU(hidden_size, hidden_size, n_layers, bidirectional=True)
 
     def forward(self, context_input, word_inputs):
@@ -157,12 +192,11 @@ class Decoder(nn.Module):
         return output, hidden, attention_weights
 
 class RARNN(nn.Module):
-    def __init__(self, input_tokens, output_tokens, hidden_size):
+    def __init__(self, input_size, output_tokens, hidden_size):
         super(RARNN, self).__init__()
 
-        self.input_tokens = input_tokens
+        self.input_size = input_size
         self.output_tokens = output_tokens
-        self.input_size = len(input_tokens)
         self.output_size = len(output_tokens)
         self.hidden_size = hidden_size
 
@@ -213,9 +247,14 @@ class RARNN(nn.Module):
 
         # Slice outputs
         if word_targets is None:
-            decoder_outputs = decoder_outputs[:i]
-            decoder_attentions = decoder_attentions[:i]
-        else:
+            print('i', i)
+            if i > 0:
+                decoder_outputs = decoder_outputs[:i]
+                decoder_attentions = decoder_attentions[:i]
+            else:
+                decoder_outputs = Variable(torch.Tensor())
+                decoder_attentions = Variable(torch.Tensor())
+        elif target_len > 1:
             decoder_attentions = decoder_attentions[:-1] # Ignore attentions on EOS
 
         return decoder_outputs, decoder_attentions
@@ -228,13 +267,13 @@ def train(flat, node):
     # Turn inputs into tensors
     context_var = tokens_to_tensor([context], rarnn.output_tokens, False)
     context_var = Variable(context_var)
-    inputs_var = tokens_to_tensor(inputs, rarnn.input_tokens).view(-1, 1, 1) # seq x batch x size
+    inputs_var = input_lang.tokens_to_tensor(inputs) # seq x batch x size
     inputs_var = Variable(inputs_var)
     target_tokens = [target_token for target_token, _ in targets]
     target_ranges = [target_range for _, target_range in targets]
     target_tokens_var = tokens_to_tensor(target_tokens, rarnn.output_tokens)
     target_tokens_var = Variable(target_tokens_var)
-    target_ranges_var = ranges_to_tensor(target_ranges, len(inputs) + 1)
+    target_ranges_var = ranges_to_tensor(target_ranges, len(inputs))
     target_ranges_var = Variable(target_ranges_var)
 
     # Run through model
@@ -243,7 +282,10 @@ def train(flat, node):
     # Loss calculation and backprop
     optimizer.zero_grad()
     decoder_loss = decoder_criterion(decoder_outputs, target_tokens_var)
-    attention_loss = attention_criterion(attention_outputs, target_ranges_var)
+    if len(targets) > 0:
+        attention_loss = attention_criterion(attention_outputs, target_ranges_var)
+    else:
+        attention_loss = 0
     total_loss = decoder_loss + attention_loss
     total_loss.backward()
     optimizer.step()
@@ -255,15 +297,16 @@ def train(flat, node):
 def evaluate(context, inputs, node=None):
     if node == None:
         node = Node('parsed')
-        node.position = (0, len(inputs) - 1)
+        node.position = (0, len(inputs))
 
     # Turn data into tensors
     context_var = tokens_to_tensor([context], rarnn.output_tokens, False)
     context_var = Variable(context_var)
-    inputs_var = tokens_to_tensor(inputs, rarnn.input_tokens).view(-1, 1, 1) # seq x batch x size
+    inputs_var = input_lang.tokens_to_tensor(inputs) # seq x batch x size
     inputs_var = Variable(inputs_var)
 
     # Run through RARNN
+    print('context', context, 'inputs', inputs)
     decoder_outputs, attention_outputs = rarnn(context_var, inputs_var)
 
     # Given the decoder and attention outputs, gather contexts and inputs for sub-phrases
@@ -280,7 +323,7 @@ def evaluate(context, inputs, node=None):
         a = attention_outputs[i]
         next_input = []
         next_position = []
-        for t in range(len(a) - 1):
+        for t in range(len(a)):
             at = a[t].data[0]
             if at > 0.5:
                 if len(next_position) == 0: # Start position
@@ -292,7 +335,8 @@ def evaluate(context, inputs, node=None):
         if len(next_position) == 1: # End position
             next_position.append(t)
         next_inputs.append(next_input)
-        next_position = (next_position[0] + node.position[0], next_position[1] + node.position[0])
+        if len(next_position) == 2:
+            next_position = (next_position[0] + node.position[0], next_position[1] + node.position[0])
         next_positions.append(next_position)
 
     evaluated = list(zip(next_contexts, next_inputs, next_positions))
@@ -308,6 +352,7 @@ def evaluate(context, inputs, node=None):
         plt.show(); plt.close()
 
     for context, inputs, position in evaluated:
+        print('evaluated', inputs, position)
         # Add a node for parsed sub-phrases and values
         sub_node = Node(context)
         sub_node.position = position
@@ -337,12 +382,16 @@ def prepare_string(s):
     s = re.sub(r'\s+', ' ', s)
     return s.split(' ')
 
+import traceback
+
 def parse(s, cb):
     words = prepare_string(s)
     try:
         evaluated = evaluate_and_print('%', words)
         cb({'words': words, 'parsed': evaluated.to_json()})
     except Exception:
+        print("Error evaluating")
+        traceback.print_exc()
         cb({'error': "Failed to evaluate"})
 
 if sys.argv[1] == 'train':
@@ -352,25 +401,13 @@ if sys.argv[1] == 'train':
     parsed = parse_file('.', 'grammar.nlg')
     parsed.map_leaves(tokenizeLeaf)
 
-    input_tokens = []
-
-    def get_input_tokens(node):
-        if node.type == 'word':
-            input_tokens.append(node.key)
-
-    descend(parsed, get_input_tokens, None)
-
-    input_tokens = list(set(input_tokens))
-    input_tokens = ['EOS'] + input_tokens
-    print(input_tokens)
-
-    output_tokens = [child.key for child in parsed.children if child.type in ['phrase', 'variable']]
+    output_tokens = [child.key for child in parsed.children if child.type in ['phrase', 'value', 'ref']]
     output_tokens = ['EOS'] + output_tokens
     print(output_tokens)
 
     # Initialize model, optimizer, criterions
 
-    rarnn = RARNN(input_tokens, output_tokens, hidden_size)
+    rarnn = RARNN(input_size, output_tokens, hidden_size)
     optimizer = torch.optim.Adam(rarnn.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     decoder_criterion = nn.NLLLoss()
